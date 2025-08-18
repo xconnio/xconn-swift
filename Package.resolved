@@ -1,0 +1,42 @@
+{
+  "originHash" : "78269fa1573ea5c9bc50d8a5482e89a283d68a0cda3bef336f80d834385ecc05",
+  "pins" : [
+    {
+      "identity" : "swift-sodium",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jedisct1/swift-sodium.git",
+      "state" : {
+        "revision" : "4f9164a0a2c9a6a7ff53a2833d54a5c79c957342",
+        "version" : "0.9.1"
+      }
+    },
+    {
+      "identity" : "swiftcbor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/myfreeweb/SwiftCBOR.git",
+      "state" : {
+        "revision" : "04ccff117f6549121d5721ec84fdf0162122b90e",
+        "version" : "0.5.0"
+      }
+    },
+    {
+      "identity" : "swiftmsgpack",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/malcommac/SwiftMsgPack.git",
+      "state" : {
+        "revision" : "6a9b7d73f78cd0f7e5ad280fde39a347f15baaf7",
+        "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "wampproto-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/xconnio/wampproto-swift.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "26f96a2c0300986cd51ca808b7aba3b1c7d879ad"
+      }
+    }
+  ],
+  "version" : 3
+}
