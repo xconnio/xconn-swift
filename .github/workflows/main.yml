@@ -30,5 +30,8 @@ jobs:
       - name: Build the package
         run: make build
 
+      - name: Start NXT
+        run: make setup-and-run-xconn &
+
       - name: Run tests
         run: make test
