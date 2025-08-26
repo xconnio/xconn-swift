@@ -14,8 +14,10 @@ let package = Package(
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(name: "XConn", targets: ["XConn"])
+        // .executable(name: "Running", targets: ["Running"])
     ],
     dependencies: [
+        // .package(name: "Wampproto", path: "../wampproto-swift")
         .package(url: "https://github.com/xconnio/wampproto-swift.git", branch: "main")
     ],
     targets: [
@@ -24,9 +26,11 @@ let package = Package(
         .target(
             name: "XConn",
             dependencies: [
+                // "Wampproto"
                 .product(name: "Wampproto", package: "wampproto-swift")
             ]
         ),
+        // .executableTarget(name: "Running", dependencies: ["XConn"]),
         .testTarget(
             name: "XConnTests",
             dependencies: ["XConn"]

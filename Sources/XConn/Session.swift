@@ -11,6 +11,9 @@ import Wampproto
 public actor Session {
     var baseSession: BaseSession
     var wampSession: Wampproto.Session
+    var isConnected: Bool = true
+
+    var goodbyeContinuation: CheckedContinuation<Void, Never>?
 
     var idgen: SessionScopeIDGenerator = .init()
 
@@ -27,7 +30,7 @@ public actor Session {
     }
 
     public func wait() async throws {
-        while true {
+        while isConnected {
             do {
                 let data = try await baseSession.receiveMessage()
                 try await processIncomingMessage(data)
@@ -37,7 +40,28 @@ public actor Session {
         }
     }
 
-    private func processIncomingMessage(_: Wampproto.Message) async throws {}
+    public func leave() async throws {
+        let goodbyeMessage: Message = Goodbye(details: [:], reason: "wamp.close.close_realm")
+        try await sendMessage(message: goodbyeMessage)
+
+        return await withCheckedContinuation { continuation in
+            self.goodbyeContinuation = continuation
+        }
+    }
+
+    private func processIncomingMessage(_ message: Wampproto.Message) async throws {
+        print("Incoming Message")
+        switch message {
+        case _ as Goodbye:
+            if let continuation = goodbyeContinuation {
+                continuation.resume(returning: ())
+            }
+            isConnected = false
+            try await baseSession.leave()
+        default:
+            print("Received unknown message: \(message)")
+        }
+    }
 
     private func sendMessage(message: Message) async throws {
         let data = try wampSession.sendMessage(msg: message)

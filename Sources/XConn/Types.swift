@@ -43,7 +43,7 @@ protocol BaseSessionProtocol {
     func receiveMessage() async throws -> Message
 }
 
-public class BaseSession: BaseSessionProtocol {
+public final class BaseSession: BaseSessionProtocol, Sendable {
     let task: URLSessionWebSocketTask
     let sessionDetails: SessionDetails
     let serializer: Serializer
@@ -88,5 +88,10 @@ public class BaseSession: BaseSessionProtocol {
         let websocketMessage = try await receive()
 
         return try serializer.deserialize(data: websocketMessage.serializedMessage())
+    }
+
+    public func leave() async throws {
+        let reason = Data("Client left".utf8)
+        task.cancel(with: URLSessionWebSocketTask.CloseCode.goingAway, reason: reason)
     }
 }

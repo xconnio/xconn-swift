@@ -8,7 +8,7 @@
 import Foundation
 import Wampproto
 
-public class SessionJoiner {
+public final class SessionJoiner: Sendable {
     public let authenticator: ClientAuthenticator
     public let serializer: Serializer
 
@@ -20,7 +20,7 @@ public class SessionJoiner {
     public func join(uri: String, realm: String) async throws -> BaseSession {
         let websocketTask = connect(uri: uri)
 
-        let joiner = Joiner(realm: realm, serializer: serializer, authenticator: authenticator)
+        var joiner = Joiner(realm: realm, serializer: serializer, authenticator: authenticator)
         let helloWebSocketMessage = try joiner.sendHello().webSocketMessage()
         try await websocketTask.send(helloWebSocketMessage)
 
