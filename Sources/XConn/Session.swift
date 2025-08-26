@@ -14,6 +14,8 @@ public actor Session {
     var isConnected: Bool = true
 
     var callRequests: [Int64: CheckedContinuation<XConn.Result, Swift.Error>] = [:]
+    var registerRequests: [Int64: RegisterRequest] = [:]
+    var registrations: [Int64: ProcedureHandler] = [:]
 
     var goodbyeContinuation: CheckedContinuation<Void, Never>?
 
@@ -31,7 +33,7 @@ public actor Session {
         procedure: String,
         args: Arguments? = nil,
         kwargs: KeywordArguments? = nil,
-        options: DefaultOptions = [:]
+        options: SendableDict = [:]
     ) async throws -> XConn.Result {
         let callMessage = Wampproto.Call(
             withFields: CallFields(
@@ -47,6 +49,25 @@ public actor Session {
 
         return try await withCheckedThrowingContinuation { continuation in
             callRequests[callMessage.requestID] = continuation
+        }
+    }
+
+    public func register(
+        procedure: String,
+        endpoint: @escaping ProcedureHandler,
+        options: SendableDict = [:]
+    ) async throws -> Registration {
+        let registerMessage = Wampproto.Register(
+            withFields: RegisterFields(requestID: idgen.next(), uri: procedure, options: options)
+        )
+
+        try await sendMessage(message: registerMessage)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            registerRequests[registerMessage.requestID] = RegisterRequest(
+                continuation: continuation,
+                endpoint: endpoint
+            )
         }
     }
 
@@ -75,7 +96,6 @@ public actor Session {
     }
 
     private func processIncomingMessage(_ message: Wampproto.Message) async throws {
-        print("Incoming Message")
         switch message {
         case _ as Goodbye:
             if let continuation = goodbyeContinuation {
@@ -87,6 +107,13 @@ public actor Session {
             if let continuation = callRequests.removeValue(forKey: msg.requestID) {
                 let result = XConn.Result(args: msg.args, kwargs: msg.kwargs, details: msg.details)
                 continuation.resume(returning: result)
+            }
+        case let msg as Registered:
+            if let request = registerRequests.removeValue(forKey: msg.requestID) {
+                registrations[msg.registrationID] = request.endpoint
+                request.continuation.resume(
+                    returning: Registration(registrationID: msg.registrationID, session: self)
+                )
             }
         default:
             print("Received unknown message: \(message)")

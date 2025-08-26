@@ -135,3 +135,28 @@ public struct Result: Sendable {
         self.details = details
     }
 }
+
+public struct Invocation: Sendable {
+    var args: Arguments?
+    var kwargs: KeywordArguments?
+    var details: SendableDict = [:]
+    public init(args: Arguments? = nil, kwargs: KeywordArguments? = nil, details: SendableDict = [:]) {
+        self.args = args
+        self.kwargs = kwargs
+        self.details = details
+    }
+}
+
+public struct RegisterRequest {
+    let continuation: CheckedContinuation<XConn.Registration, Swift.Error>
+    let endpoint: ProcedureHandler
+}
+
+public struct Registration: Sendable {
+    public var registrationID: Int64
+    var session: Session
+
+    public func unregister() async throws {
+        // return try await self.session.unregister(registrationID: registrationID)
+    }
+}
