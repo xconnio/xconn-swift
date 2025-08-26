@@ -29,6 +29,10 @@ public final class SessionJoiner: Sendable {
 
         if let authenticateMessage = try joiner.receive(data: serializedMessage) {
             try await websocketTask.send(authenticateMessage.webSocketMessage())
+
+            let response = try await websocketTask.receive()
+            let serializedMessage = response.serializedMessage()
+            _ = try joiner.receive(data: serializedMessage)
         }
 
         let sessionDetails = try joiner.getSessionDetails()

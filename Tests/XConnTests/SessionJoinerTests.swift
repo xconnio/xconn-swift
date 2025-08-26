@@ -6,7 +6,6 @@
 //
 
 import Testing
-@preconcurrency import Wampproto
 @testable import XConn
 
 let args: [Serializer] = [JSONSerializer(), MsgPackSerializer(), CBORSerializer()]
@@ -19,12 +18,12 @@ struct SessionJoinerTests {
     let testAuthMethod = "anonymous"
 
     @Test("Joins with different serializers", arguments: args)
-    func usingAnonymousAuthenticator(_ serializer: Serializer) async throws {
+    func usingAnonymousAuthenticator(_ serializer: XConn.Serializer) async throws {
         let joiner = SessionJoiner(
-            authenticator: AnonymousAuthenticator(authID: authId),
+            authenticator: AnonymousAuthenticator(authID: ""),
             serializer: serializer
         )
         let session = try await joiner.join(uri: "ws://localhost:8080/ws", realm: "realm1")
-        #expect(session.authid == "1")
+        #expect(!session.authid.isEmpty == false)
     }
 }

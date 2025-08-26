@@ -14,7 +14,7 @@ public typealias Authenticator = Wampproto.ClientAuthenticator
 
 public typealias AnonymousAuthenticator = Wampproto.AnonymousAuthenticator
 public typealias CRAAuthenticator = Wampproto.CRAAuthenticator
-public typealias CryptoAuthenticator = Wampproto.CryptoSignAuthenticator
+public typealias CryptoSignAuthenticator = Wampproto.CryptoSignAuthenticator
 public typealias TicketAuthenticator = Wampproto.TicketAuthenticator
 
 // Serializers
@@ -157,6 +157,19 @@ public struct Registration: Sendable {
     var session: Session
 
     public func unregister() async throws {
-        // return try await self.session.unregister(registrationID: registrationID)
+        try await session.unregister(registrationID: registrationID)
     }
+}
+
+public struct UnregisterRequest {
+    let continuation: CheckedContinuation<Void, Swift.Error>
+    let registrationID: Int64
+}
+
+public enum RequestError: Swift.Error {
+    case invalid(String)
+}
+
+public enum SubprotocolError: Swift.Error {
+    case unsupported(String)
 }
