@@ -7,6 +7,34 @@
 import Foundation
 import Wampproto
 
+// PUBLIC API
+
+// Authenticator Types
+public typealias Authenticator = Wampproto.ClientAuthenticator
+
+public typealias AnonymousAuthenticator = Wampproto.AnonymousAuthenticator
+public typealias CRAAuthenticator = Wampproto.CRAAuthenticator
+public typealias CryptoAuthenticator = Wampproto.CryptoSignAuthenticator
+public typealias TicketAuthenticator = Wampproto.TicketAuthenticator
+
+// Serializers
+public typealias Serializer = Wampproto.Serializer
+
+public typealias JSONSerializer = Wampproto.JSONSerializer
+public typealias MsgPackSerializer = Wampproto.MsgPackSerializer
+public typealias CBORSerializer = Wampproto.CBORSerializer
+public typealias SerializedMessage = Wampproto.SerializedMessage
+
+// Args
+public typealias Arguments = [any Sendable]
+public typealias KeywordArguments = [String: any Sendable]
+public typealias DefaultOptions = [String: any Sendable]
+public typealias SendableDict = DefaultOptions
+
+// Callbacks/Handlers
+public typealias ProcedureHandler = (Invocation) async throws -> Result
+public typealias EventHandler = (Event) async throws -> Void
+
 extension SerializedMessage {
     func webSocketMessage() -> URLSessionWebSocketTask.Message {
         switch self {
@@ -93,5 +121,17 @@ public final class BaseSession: BaseSessionProtocol, Sendable {
     public func leave() async throws {
         let reason = Data("Client left".utf8)
         task.cancel(with: URLSessionWebSocketTask.CloseCode.goingAway, reason: reason)
+    }
+}
+
+public struct Result: Sendable {
+    var args: Arguments?
+    var kwargs: KeywordArguments?
+    var details: SendableDict = [:]
+
+    public init(args: Arguments? = nil, kwargs: KeywordArguments? = nil, details: SendableDict = [:]) {
+        self.args = args
+        self.kwargs = kwargs
+        self.details = details
     }
 }

@@ -13,6 +13,8 @@ public actor Session {
     var wampSession: Wampproto.Session
     var isConnected: Bool = true
 
+    var callRequests: [Int64: CheckedContinuation<XConn.Result, Swift.Error>] = [:]
+
     var goodbyeContinuation: CheckedContinuation<Void, Never>?
 
     var idgen: SessionScopeIDGenerator = .init()
@@ -22,6 +24,29 @@ public actor Session {
         wampSession = Wampproto.Session(serializer: baseSession.serializer)
         Task {
             try await wait()
+        }
+    }
+
+    public func call(
+        procedure: String,
+        args: Arguments? = nil,
+        kwargs: KeywordArguments? = nil,
+        options: DefaultOptions = [:]
+    ) async throws -> XConn.Result {
+        let callMessage = Wampproto.Call(
+            withFields: CallFields(
+                requestID: idgen.next(),
+                uri: procedure,
+                args: args,
+                kwargs: kwargs,
+                options: options
+            )
+        )
+
+        try await sendMessage(message: callMessage)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            callRequests[callMessage.requestID] = continuation
         }
     }
 
@@ -58,6 +83,11 @@ public actor Session {
             }
             isConnected = false
             try await baseSession.leave()
+        case let msg as Wampproto.Result:
+            if let continuation = callRequests.removeValue(forKey: msg.requestID) {
+                let result = XConn.Result(args: msg.args, kwargs: msg.kwargs, details: msg.details)
+                continuation.resume(returning: result)
+            }
         default:
             print("Received unknown message: \(message)")
         }
