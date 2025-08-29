@@ -18,6 +18,8 @@ public actor Session {
     private var registrations: [Int64: ProcedureHandler] = [:]
     private var unregisterRequests: [Int64: UnregisterRequest] = [:]
 
+    var publishRequests: [Int64: CheckedContinuation<Void, Swift.Error>] = [:]
+
     private var goodbyeContinuation: CheckedContinuation<Void, Never>?
 
     var idgen: SessionScopeIDGenerator = .init()
@@ -87,6 +89,26 @@ public actor Session {
         }
     }
 
+    public func publish(
+        topic: String,
+        args: Arguments? = nil,
+        kwargs: KeywordArguments? = nil,
+        options: SendableDict = [:]
+    ) async throws {
+        let publishMessage = Publish(withFields: PublishFields(
+            requestID: idgen.next(), uri: topic, args: args, kwargs: kwargs, options: options
+        )
+        )
+
+        try await sendMessage(message: publishMessage)
+
+        if options["acknowledge"] as? Bool == true {
+            return try await withCheckedThrowingContinuation { continuation in
+                publishRequests[publishMessage.requestID] = continuation
+            }
+        }
+    }
+
     public func next() -> Int64 {
         idgen.next()
     }
@@ -150,6 +172,10 @@ public actor Session {
                 registrations.removeValue(forKey: request.registrationID)
                 unregisterRequests.removeValue(forKey: msg.requestID)
                 request.continuation.resume(returning: ())
+            }
+        case let msg as Wampproto.Published:
+            if let continuation = publishRequests.removeValue(forKey: msg.requestID) {
+                continuation.resume(returning: ())
             }
         case let msg as Wampproto.Error:
             let error = ApplicationError(message: msg.uri, args: msg.args, kwargs: msg.kwargs)
