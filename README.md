@@ -1,2 +1,2 @@
 # xconn-swift
-WAMP Client for Go
+WAMP Client for Swift
