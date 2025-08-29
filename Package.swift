@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "XConn",
     platforms: [
-        .macOS(.v10_15), // Requires macOS 10.15 or newer
+        .macOS(.v13), // Requires macOS 10.15 or newer
         .iOS(.v13), // Requires iOS 13 or newer
         .tvOS(.v13), // Requires tvOS 13 or newer
         .watchOS(.v6) // Requires watchOS 6 or newer,
