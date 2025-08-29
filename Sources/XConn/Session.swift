@@ -19,6 +19,8 @@ public actor Session {
     private var unregisterRequests: [Int64: UnregisterRequest] = [:]
 
     var publishRequests: [Int64: CheckedContinuation<Void, Swift.Error>] = [:]
+    var subscribeRequests: [Int64: SubscribeRequest] = [:]
+    var subscriptions: [Int64: EventHandler] = [:]
 
     private var goodbyeContinuation: CheckedContinuation<Void, Never>?
 
@@ -109,6 +111,24 @@ public actor Session {
         }
     }
 
+    public func subscribe(
+        topic: String,
+        endpoint: @escaping EventHandler,
+        options: DefaultOptions = [:]
+    ) async throws -> Subscription {
+        let subscribeMessage = Subscribe(
+            withFields: SubscribeFields(requestID: idgen.next(), topic: topic, options: options)
+        )
+
+        try await sendMessage(message: subscribeMessage)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            subscribeRequests[subscribeMessage.requestID] = SubscribeRequest(
+                continuation: continuation, endpoint: endpoint
+            )
+        }
+    }
+
     public func next() -> Int64 {
         idgen.next()
     }
@@ -177,6 +197,17 @@ public actor Session {
             if let continuation = publishRequests.removeValue(forKey: msg.requestID) {
                 continuation.resume(returning: ())
             }
+        case let msg as Wampproto.Subscribed:
+            if let request = subscribeRequests.removeValue(forKey: msg.requestID) {
+                subscriptions[msg.subscriptionID] = request.endpoint
+                let subscription = Subscription(subscriptionID: msg.subscriptionID, session: self)
+                request.continuation.resume(returning: subscription)
+            }
+        case let msg as Wampproto.Event:
+            if let continuation = subscriptions[msg.subscriptionID] {
+                let event = Event(args: msg.args, kwargs: msg.kwargs, details: msg.details)
+                try await continuation(event)
+            }
         case let msg as Wampproto.Error:
             let error = ApplicationError(message: msg.uri, args: msg.args, kwargs: msg.kwargs)
             let invalidRequestMessage = "Received \(type(of: msg).text) message for invalid request ID"
@@ -199,6 +230,18 @@ public actor Session {
                 guard let request = unregisterRequests.removeValue(forKey: msg.requestID) else {
                     throw invalidRequestError
                 }
+                request.continuation.resume(throwing: error)
+            case Wampproto.Publish.id:
+                guard let continuation = publishRequests.removeValue(forKey: msg.requestID) else {
+                    throw invalidRequestError
+                }
+
+                continuation.resume(throwing: error)
+            case Wampproto.Subscribe.id:
+                guard let request = subscribeRequests.removeValue(forKey: msg.requestID) else {
+                    throw invalidRequestError
+                }
+
                 request.continuation.resume(throwing: error)
             default:
                 throw ProtocolError(message: msg.uri)
