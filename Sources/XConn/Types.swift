@@ -166,6 +166,36 @@ public struct UnregisterRequest {
     let registrationID: Int64
 }
 
+public struct SubscribeRequest {
+    let continuation: CheckedContinuation<XConn.Subscription, Swift.Error>
+    let endpoint: EventHandler
+}
+
+public struct Subscription: Sendable {
+    public var subscriptionID: Int64
+    var session: Session
+
+    public func unsubscribe() async throws {
+        try await session.unsubscribe(subscriptionID: subscriptionID)
+    }
+}
+
+public struct UnsubscribeRequest {
+    let continuation: CheckedContinuation<Void, Swift.Error>
+    let subscriptionID: Int64
+}
+
+public struct Event: Sendable {
+    var args: Arguments?
+    var kwargs: KeywordArguments?
+    var details: SendableDict = [:]
+    public init(args: Arguments? = nil, kwargs: KeywordArguments? = nil, details: SendableDict = [:]) {
+        self.args = args
+        self.kwargs = kwargs
+        self.details = details
+    }
+}
+
 public enum RequestError: Swift.Error {
     case invalid(String)
 }

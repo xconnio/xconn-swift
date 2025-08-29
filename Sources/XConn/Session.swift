@@ -18,6 +18,11 @@ public actor Session {
     private var registrations: [Int64: ProcedureHandler] = [:]
     private var unregisterRequests: [Int64: UnregisterRequest] = [:]
 
+    var publishRequests: [Int64: CheckedContinuation<Void, Swift.Error>] = [:]
+    var subscribeRequests: [Int64: SubscribeRequest] = [:]
+    var subscriptions: [Int64: EventHandler] = [:]
+    var unsubscribeRequests: [Int64: UnsubscribeRequest] = [:]
+
     private var goodbyeContinuation: CheckedContinuation<Void, Never>?
 
     var idgen: SessionScopeIDGenerator = .init()
@@ -87,6 +92,58 @@ public actor Session {
         }
     }
 
+    public func publish(
+        topic: String,
+        args: Arguments? = nil,
+        kwargs: KeywordArguments? = nil,
+        options: SendableDict = [:]
+    ) async throws {
+        let publishMessage = Publish(withFields: PublishFields(
+            requestID: idgen.next(), uri: topic, args: args, kwargs: kwargs, options: options
+        )
+        )
+
+        try await sendMessage(message: publishMessage)
+
+        if options["acknowledge"] as? Bool == true {
+            return try await withCheckedThrowingContinuation { continuation in
+                publishRequests[publishMessage.requestID] = continuation
+            }
+        }
+    }
+
+    public func subscribe(
+        topic: String,
+        endpoint: @escaping EventHandler,
+        options: DefaultOptions = [:]
+    ) async throws -> Subscription {
+        let subscribeMessage = Subscribe(
+            withFields: SubscribeFields(requestID: idgen.next(), topic: topic, options: options)
+        )
+
+        try await sendMessage(message: subscribeMessage)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            subscribeRequests[subscribeMessage.requestID] = SubscribeRequest(
+                continuation: continuation, endpoint: endpoint
+            )
+        }
+    }
+
+    public func unsubscribe(subscriptionID: Int64) async throws {
+        let unsubscribeMessage = Unsubscribe(
+            withFields: UnsubscribeFields(requestID: idgen.next(), subscriptionID: subscriptionID)
+        )
+        try await sendMessage(message: unsubscribeMessage)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            unsubscribeRequests[unsubscribeMessage.requestID] = UnsubscribeRequest(
+                continuation: continuation,
+                subscriptionID: subscriptionID
+            )
+        }
+    }
+
     public func next() -> Int64 {
         idgen.next()
     }
@@ -151,6 +208,26 @@ public actor Session {
                 unregisterRequests.removeValue(forKey: msg.requestID)
                 request.continuation.resume(returning: ())
             }
+        case let msg as Wampproto.Published:
+            if let continuation = publishRequests.removeValue(forKey: msg.requestID) {
+                continuation.resume(returning: ())
+            }
+        case let msg as Wampproto.Subscribed:
+            if let request = subscribeRequests.removeValue(forKey: msg.requestID) {
+                subscriptions[msg.subscriptionID] = request.endpoint
+                let subscription = Subscription(subscriptionID: msg.subscriptionID, session: self)
+                request.continuation.resume(returning: subscription)
+            }
+        case let msg as Wampproto.Event:
+            if let continuation = subscriptions[msg.subscriptionID] {
+                let event = Event(args: msg.args, kwargs: msg.kwargs, details: msg.details)
+                try await continuation(event)
+            }
+        case let msg as Wampproto.Unsubscribed:
+            if let request = unsubscribeRequests.removeValue(forKey: msg.requestID) {
+                subscriptions.removeValue(forKey: request.subscriptionID)
+                request.continuation.resume(returning: ())
+            }
         case let msg as Wampproto.Error:
             let error = ApplicationError(message: msg.uri, args: msg.args, kwargs: msg.kwargs)
             let invalidRequestMessage = "Received \(type(of: msg).text) message for invalid request ID"
@@ -173,6 +250,24 @@ public actor Session {
                 guard let request = unregisterRequests.removeValue(forKey: msg.requestID) else {
                     throw invalidRequestError
                 }
+                request.continuation.resume(throwing: error)
+            case Wampproto.Publish.id:
+                guard let continuation = publishRequests.removeValue(forKey: msg.requestID) else {
+                    throw invalidRequestError
+                }
+
+                continuation.resume(throwing: error)
+            case Wampproto.Subscribe.id:
+                guard let request = subscribeRequests.removeValue(forKey: msg.requestID) else {
+                    throw invalidRequestError
+                }
+
+                request.continuation.resume(throwing: error)
+            case Wampproto.Unsubscribe.id:
+                guard let request = unsubscribeRequests.removeValue(forKey: msg.requestID) else {
+                    throw invalidRequestError
+                }
+
                 request.continuation.resume(throwing: error)
             default:
                 throw ProtocolError(message: msg.uri)

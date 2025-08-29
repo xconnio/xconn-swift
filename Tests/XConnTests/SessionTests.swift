@@ -40,3 +40,24 @@ func checkRPCMethods(serializer: Serializer, authenticator: Authenticator) async
 
     try await session.leave()
 }
+
+@Test(arguments: zip(serializers, authenticators))
+func checkPubSubMethods(_ serializer: Serializer, _ authenticator: Authenticator) async throws {
+    let client = Client(authenticator: authenticator, serializer: serializer)
+    let session = try await client.connect(uri: "ws://localhost:8080", realm: "realm1")
+    let topic = "topic-\(type(of: serializer))-\(type(of: authenticator))-\(authenticator.authID)"
+
+    let subscription = try await session.subscribe(topic: topic) { event in
+        guard let value = event.args?.first as? String else {
+            print("Unexpected result format: \(event)")
+            return
+        }
+        #expect(value == "hello")
+    }
+
+    try await session.publish(topic: topic, args: ["hello"], kwargs: ["age": 25.2])
+
+    try await subscription.unsubscribe()
+
+    try await session.leave()
+}
