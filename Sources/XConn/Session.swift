@@ -21,6 +21,7 @@ public actor Session {
     var publishRequests: [Int64: CheckedContinuation<Void, Swift.Error>] = [:]
     var subscribeRequests: [Int64: SubscribeRequest] = [:]
     var subscriptions: [Int64: EventHandler] = [:]
+    var unsubscribeRequests: [Int64: UnsubscribeRequest] = [:]
 
     private var goodbyeContinuation: CheckedContinuation<Void, Never>?
 
@@ -129,6 +130,20 @@ public actor Session {
         }
     }
 
+    public func unsubscribe(subscriptionID: Int64) async throws {
+        let unsubscribeMessage = Unsubscribe(
+            withFields: UnsubscribeFields(requestID: idgen.next(), subscriptionID: subscriptionID)
+        )
+        try await sendMessage(message: unsubscribeMessage)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            unsubscribeRequests[unsubscribeMessage.requestID] = UnsubscribeRequest(
+                continuation: continuation,
+                subscriptionID: subscriptionID
+            )
+        }
+    }
+
     public func next() -> Int64 {
         idgen.next()
     }
@@ -208,6 +223,11 @@ public actor Session {
                 let event = Event(args: msg.args, kwargs: msg.kwargs, details: msg.details)
                 try await continuation(event)
             }
+        case let msg as Wampproto.Unsubscribed:
+            if let request = unsubscribeRequests.removeValue(forKey: msg.requestID) {
+                subscriptions.removeValue(forKey: request.subscriptionID)
+                request.continuation.resume(returning: ())
+            }
         case let msg as Wampproto.Error:
             let error = ApplicationError(message: msg.uri, args: msg.args, kwargs: msg.kwargs)
             let invalidRequestMessage = "Received \(type(of: msg).text) message for invalid request ID"
@@ -239,6 +259,12 @@ public actor Session {
                 continuation.resume(throwing: error)
             case Wampproto.Subscribe.id:
                 guard let request = subscribeRequests.removeValue(forKey: msg.requestID) else {
+                    throw invalidRequestError
+                }
+
+                request.continuation.resume(throwing: error)
+            case Wampproto.Unsubscribe.id:
+                guard let request = unsubscribeRequests.removeValue(forKey: msg.requestID) else {
                     throw invalidRequestError
                 }
 

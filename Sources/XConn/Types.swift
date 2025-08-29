@@ -176,8 +176,13 @@ public struct Subscription: Sendable {
     var session: Session
 
     public func unsubscribe() async throws {
-        // return try await self.session.unsubscribe(subscriptionID: subscriptionID)
+        try await session.unsubscribe(subscriptionID: subscriptionID)
     }
+}
+
+public struct UnsubscribeRequest {
+    let continuation: CheckedContinuation<Void, Swift.Error>
+    let subscriptionID: Int64
 }
 
 public struct Event: Sendable {
