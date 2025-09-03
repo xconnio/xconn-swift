@@ -13,15 +13,15 @@ public actor Session {
     var wampSession: Wampproto.Session
     var isConnected: Bool = true
 
-    private var callRequests: [Int64: CheckedContinuation<XConn.Result, Swift.Error>] = [:]
-    private var registerRequests: [Int64: RegisterRequest] = [:]
-    private var registrations: [Int64: ProcedureHandler] = [:]
-    private var unregisterRequests: [Int64: UnregisterRequest] = [:]
+    private var callRequests: [UInt64: CheckedContinuation<XConn.Result, Swift.Error>] = [:]
+    private var registerRequests: [UInt64: RegisterRequest] = [:]
+    private var registrations: [UInt64: ProcedureHandler] = [:]
+    private var unregisterRequests: [UInt64: UnregisterRequest] = [:]
 
-    var publishRequests: [Int64: CheckedContinuation<Void, Swift.Error>] = [:]
-    var subscribeRequests: [Int64: SubscribeRequest] = [:]
-    var subscriptions: [Int64: EventHandler] = [:]
-    var unsubscribeRequests: [Int64: UnsubscribeRequest] = [:]
+    var publishRequests: [UInt64: CheckedContinuation<Void, Swift.Error>] = [:]
+    var subscribeRequests: [UInt64: SubscribeRequest] = [:]
+    var subscriptions: [UInt64: EventHandler] = [:]
+    var unsubscribeRequests: [UInt64: UnsubscribeRequest] = [:]
 
     private var goodbyeContinuation: CheckedContinuation<Void, Never>?
 
@@ -77,7 +77,7 @@ public actor Session {
         }
     }
 
-    public func unregister(registrationID: Int64) async throws {
+    public func unregister(registrationID: UInt64) async throws {
         let unregisterMessage = Wampproto.Unregister(
             withFields: UnregisterFields(requestID: idgen.next(), registrationID: registrationID)
         )
@@ -130,7 +130,7 @@ public actor Session {
         }
     }
 
-    public func unsubscribe(subscriptionID: Int64) async throws {
+    public func unsubscribe(subscriptionID: UInt64) async throws {
         let unsubscribeMessage = Unsubscribe(
             withFields: UnsubscribeFields(requestID: idgen.next(), subscriptionID: subscriptionID)
         )
@@ -144,7 +144,7 @@ public actor Session {
         }
     }
 
-    public func next() -> Int64 {
+    public func next() -> UInt64 {
         idgen.next()
     }
 

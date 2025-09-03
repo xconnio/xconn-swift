@@ -8,7 +8,7 @@
 import Testing
 @testable import XConn
 
-let args: [Serializer] = [JSONSerializer(), MsgPackSerializer(), CBORSerializer()]
+let args: [Serializer] = [JSONSerializer(), CBORSerializer(), MsgPackSerializer()]
 struct SessionJoinerTests {
     let authId = "1"
     let testRealm = "test.realm"

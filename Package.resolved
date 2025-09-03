@@ -1,5 +1,5 @@
 {
-  "originHash" : "9e051f6bb0ddb72e03d64aaa249ebf6b65140acc83c805c52be29234ae5d83b9",
+  "originHash" : "39b1aafd6177ebe7cf8a8b65b4c8a75c576e1bccaf7ba20394379ba505137c78",
   "pins" : [
     {
       "identity" : "swift-sodium",
@@ -34,7 +34,7 @@
       "location" : "https://github.com/xconnio/wampproto-swift.git",
       "state" : {
         "branch" : "main",
-        "revision" : "476483375a6b7fced39fcac2e8b69870db58c741"
+        "revision" : "1c112cdcebf74c83a8dacfe83a163d8173900b86"
       }
     }
   ],
