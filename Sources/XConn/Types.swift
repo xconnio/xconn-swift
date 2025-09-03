@@ -60,7 +60,7 @@ extension URLSessionWebSocketTask.Message {
 }
 
 protocol BaseSessionProtocol {
-    var id: Int64 { get }
+    var id: UInt64 { get }
     var realm: String { get }
     var authid: String { get }
     var authrole: String { get }
@@ -82,7 +82,7 @@ public final class BaseSession: BaseSessionProtocol, Sendable {
         self.serializer = serializer
     }
 
-    public var id: Int64 {
+    public var id: UInt64 {
         sessionDetails.sessionID
     }
 
@@ -153,7 +153,7 @@ public struct RegisterRequest {
 }
 
 public struct Registration: Sendable {
-    public var registrationID: Int64
+    public var registrationID: UInt64
     var session: Session
 
     public func unregister() async throws {
@@ -163,7 +163,7 @@ public struct Registration: Sendable {
 
 public struct UnregisterRequest {
     let continuation: CheckedContinuation<Void, Swift.Error>
-    let registrationID: Int64
+    let registrationID: UInt64
 }
 
 public struct SubscribeRequest {
@@ -172,7 +172,7 @@ public struct SubscribeRequest {
 }
 
 public struct Subscription: Sendable {
-    public var subscriptionID: Int64
+    public var subscriptionID: UInt64
     var session: Session
 
     public func unsubscribe() async throws {
@@ -182,7 +182,7 @@ public struct Subscription: Sendable {
 
 public struct UnsubscribeRequest {
     let continuation: CheckedContinuation<Void, Swift.Error>
-    let subscriptionID: Int64
+    let subscriptionID: UInt64
 }
 
 public struct Event: Sendable {
