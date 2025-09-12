@@ -1,17 +1,18 @@
-//
-//  Session.swift
-//  XConn
-//
-//  Created by Ismail Akram on 19.08.25.
-//
-
 import Foundation
 import Wampproto
 
 public actor Session {
     var baseSession: BaseSession
     var wampSession: Wampproto.Session
-    var isConnected: Bool = true
+    public var isConnected: Bool = true {
+        didSet {
+            if !isConnected {
+                onDisconnectHandler?()
+            }
+        }
+    }
+
+    private var onDisconnectHandler: (() -> Void)?
 
     private var callRequests: [UInt64: CheckedContinuation<XConn.Result, Swift.Error>] = [:]
     private var registerRequests: [UInt64: RegisterRequest] = [:]
@@ -153,6 +154,9 @@ public actor Session {
             do {
                 let data = try await baseSession.receiveMessage()
                 try await processIncomingMessage(data)
+            } catch let error as NSError {
+                isConnected = false
+                print("Error waiting for message: \(error)")
             } catch {
                 print("Error waiting for message: \(error)")
             }
@@ -280,5 +284,17 @@ public actor Session {
     private func sendMessage(message: Message) async throws {
         let data = try wampSession.sendMessage(msg: message)
         return try await baseSession.send(webSocketMessage: data.webSocketMessage())
+    }
+}
+
+extension Session {
+    public nonisolated func onDisconnect(_ handler: @escaping @Sendable () -> Void) {
+        Task { [weak self] in
+            await self?.setDisconnectHandler(handler)
+        }
+    }
+
+    private func setDisconnectHandler(_ handler: @escaping @Sendable () -> Void) {
+        onDisconnectHandler = handler
     }
 }

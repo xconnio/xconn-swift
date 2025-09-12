@@ -72,7 +72,7 @@ protocol BaseSessionProtocol {
 }
 
 public final class BaseSession: BaseSessionProtocol, Sendable {
-    let task: URLSessionWebSocketTask
+    public let task: URLSessionWebSocketTask
     let sessionDetails: SessionDetails
     let serializer: Serializer
 
@@ -125,9 +125,9 @@ public final class BaseSession: BaseSessionProtocol, Sendable {
 }
 
 public struct Result: Sendable {
-    var args: Arguments?
-    var kwargs: KeywordArguments?
-    var details: SendableDict = [:]
+    public var args: Arguments?
+    public var kwargs: KeywordArguments?
+    public var details: SendableDict = [:]
 
     public init(args: Arguments? = nil, kwargs: KeywordArguments? = nil, details: SendableDict = [:]) {
         self.args = args
@@ -137,9 +137,9 @@ public struct Result: Sendable {
 }
 
 public struct Invocation: Sendable {
-    var args: Arguments?
-    var kwargs: KeywordArguments?
-    var details: SendableDict = [:]
+    public var args: Arguments?
+    public var kwargs: KeywordArguments?
+    public var details: SendableDict = [:]
     public init(args: Arguments? = nil, kwargs: KeywordArguments? = nil, details: SendableDict = [:]) {
         self.args = args
         self.kwargs = kwargs
@@ -186,9 +186,9 @@ public struct UnsubscribeRequest {
 }
 
 public struct Event: Sendable {
-    var args: Arguments?
-    var kwargs: KeywordArguments?
-    var details: SendableDict = [:]
+    public var args: Arguments?
+    public var kwargs: KeywordArguments?
+    public var details: SendableDict = [:]
     public init(args: Arguments? = nil, kwargs: KeywordArguments? = nil, details: SendableDict = [:]) {
         self.args = args
         self.kwargs = kwargs

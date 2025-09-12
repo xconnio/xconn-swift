@@ -21,7 +21,7 @@ func checkRPCMethods(serializer: Serializer, authenticator: Authenticator) async
     // Register a procedure
     let registration = try await session.register(
         procedure: procedure,
-        endpoint: { _ in Result(args: ["hello"], kwargs: ["age": ["age": 12.22]]) }
+        endpoint: { _ in Result(args: ["hello"], kwargs: ["age": ["age": 12]]) }
     )
     // Call the procedure
     let result = try await session.call(procedure: procedure)
@@ -52,7 +52,7 @@ func checkPubSubMethods(_ serializer: Serializer, _ authenticator: Authenticator
         #expect(value == "hello")
     }
 
-    try await session.publish(topic: topic, args: ["hello"], kwargs: ["age": 25.22])
+    try await session.publish(topic: topic, args: ["hello"], kwargs: ["age": 25])
 
     try await subscription.unsubscribe()
 
