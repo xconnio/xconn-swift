@@ -1,6 +1,15 @@
 {
-  "originHash" : "39b1aafd6177ebe7cf8a8b65b4c8a75c576e1bccaf7ba20394379ba505137c78",
+  "originHash" : "943dbead40ab376e07a84ce73819986aefbb49e282abc0cc3964831806bd2db4",
   "pins" : [
+    {
+      "identity" : "msgpack-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/fumoboy007/msgpack-swift.git",
+      "state" : {
+        "revision" : "fe3101819f4f82b086da5279a9df81f6754798e9",
+        "version" : "2.0.6"
+      }
+    },
     {
       "identity" : "swift-sodium",
       "kind" : "remoteSourceControl",
@@ -20,21 +29,12 @@
       }
     },
     {
-      "identity" : "swiftmsgpack",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/malcommac/SwiftMsgPack.git",
-      "state" : {
-        "revision" : "6a9b7d73f78cd0f7e5ad280fde39a347f15baaf7",
-        "version" : "1.2.0"
-      }
-    },
-    {
       "identity" : "wampproto-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xconnio/wampproto-swift.git",
       "state" : {
         "branch" : "main",
-        "revision" : "1c112cdcebf74c83a8dacfe83a163d8173900b86"
+        "revision" : "357297971abe5d7c8dc3217129cbb842dbea951a"
       }
     }
   ],

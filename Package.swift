@@ -7,9 +7,9 @@ let package = Package(
     name: "XConn",
     platforms: [
         .macOS(.v13), // Requires macOS 10.15 or newer
-        .iOS(.v13), // Requires iOS 13 or newer
+        .iOS(.v16), // Requires iOS 13 or newer
         .tvOS(.v13), // Requires tvOS 13 or newer
-        .watchOS(.v6) // Requires watchOS 6 or newer,
+        .watchOS(.v9) // Requires watchOS 6 or newer,
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
